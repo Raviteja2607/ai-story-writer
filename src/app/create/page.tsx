@@ -42,49 +42,58 @@ export default function CreatePage() {
       ]
     : [];
 
-  // Confetti canvas
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const confettiTimer = useRef<number | null>(null);
+// Confetti canvas
+const canvasRef = useRef<HTMLCanvasElement | null>(null);
+const confettiTimer = useRef<number | null>(null);
 
-  useEffect(() => {
-    return () => {
+useEffect(() => {
+  return () => {
+    if (confettiTimer.current) cancelAnimationFrame(confettiTimer.current);
+  };
+}, []);
+
+function launchConfetti() {
+  const canvas = canvasRef.current;
+  if (!canvas) return;
+
+  const ctxMaybe = canvas.getContext("2d");
+  if (!ctxMaybe) return;                // ✅ guard for TS
+  const ctx = ctxMaybe;                 // capture non-null in closure
+
+  // width/height also guarded for SSR
+  const W = (canvas.width =
+    typeof window !== "undefined" ? window.innerWidth : 800);
+  const H = (canvas.height = 300);
+
+  const pieces = Array.from({ length: 120 }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * -H,
+    r: 4 + Math.random() * 6,
+    c: `hsl(${Math.random() * 360},90%,60%)`,
+    s: 2 + Math.random() * 3,
+    a: Math.random() * Math.PI,
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of pieces) {
+      p.y += p.s;
+      p.x += Math.sin((p.a += 0.03)) * 1.2;
+      if (p.y > H + 20) p.y = -10;
+      ctx.fillStyle = p.c;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    confettiTimer.current = requestAnimationFrame(draw);
+    // stop after ~1.6s
+    setTimeout(() => {
       if (confettiTimer.current) cancelAnimationFrame(confettiTimer.current);
-    }
-  }, []);
-
-  function launchConfetti() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const W = canvas.width = window.innerWidth;
-    const H = canvas.height = 300;
-    const pieces = Array.from({ length: 120 }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * -H,
-      r: 4 + Math.random() * 6,
-      c: `hsl(${Math.random()*360},90%,60%)`,
-      s: 2 + Math.random() * 3,
-      a: Math.random() * Math.PI
-    }));
-
-    function draw() {
-      ctx.clearRect(0,0,W,H);
-      pieces.forEach(p => {
-        p.y += p.s;
-        p.x += Math.sin(p.a += 0.03) * 1.2;
-        if (p.y > H + 20) p.y = -10;
-        ctx.fillStyle = p.c;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-        ctx.fill();
-      });
-      confettiTimer.current = requestAnimationFrame(draw);
-      setTimeout(() => { if (confettiTimer.current) cancelAnimationFrame(confettiTimer.current); }, 1600);
-    }
-    draw();
+    }, 1600);
   }
+  draw();
+}
+
 
   async function generate() {
     setLoading(true); setError(null);
