@@ -1,0 +1,20 @@
+cat > .gitignore << 'EOF'
+# dependencies
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+
+# next
+.next/
+out/
+.vercel/
+
+# env & local
+.env*
+!.env.example
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+EOF
